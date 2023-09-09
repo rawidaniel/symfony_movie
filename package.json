@@ -2,12 +2,14 @@
   "devDependencies": {
     "@babel/core": "^7.17.0",
     "@babel/preset-env": "^7.16.0",
+    "@prettier/plugin-php": "^0.20.1",
     "@symfony/webpack-encore": "^4.0.0",
     "core-js": "^3.23.0",
     "file-loader": "^6.2.0",
     "glob-all": "^3.3.1",
     "path": "^0.12.7",
     "postcss-loader": "^7.3.3",
+    "prettier": "^3.0.2",
     "purgecss-webpack-plugin": "^5.0.0",
     "regenerator-runtime": "^0.13.9",
     "tailwindcss": "^3.3.3",
@@ -22,6 +24,7 @@
     "dev": "encore dev",
     "watch": "encore dev --watch",
     "build": "encore production --progress",
-    "tailwindWatch": "npx tailwindcss -i ./assets/styles/app.css -o ./public/build/app.css --watch"
+    "tailwindWatch": "npx tailwindcss -i ./assets/styles/app.css -o ./public/build/app.css --watch",
+    "prettier": "prettier"
   }
 }

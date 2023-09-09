@@ -12,7 +12,9 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-
+use OpenApi\Annotations as OA;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class MoviesController extends AbstractController
 {
@@ -20,7 +22,8 @@ class MoviesController extends AbstractController
     private $movieRepository;
     private $em;
 
-    public function __construct(MovieRepository $movieRepository, EntityManagerInterface $em){
+    public function __construct(MovieRepository $movieRepository, EntityManagerInterface $em)
+    {
         $this->movieRepository = $movieRepository;
         $this->em = $em;
     }
@@ -28,7 +31,7 @@ class MoviesController extends AbstractController
     #[Route('/movies', name: 'app_movies')]
     public function index(): Response
     {
-        
+
         $movies = $this->movieRepository->findAll();
         // dd($movies);
 
@@ -38,26 +41,27 @@ class MoviesController extends AbstractController
     }
 
     #[Route('movies/create', name: 'app_movie_create')]
-    public function create(Request $request): Response {
+    public function create(Request $request): Response
+    {
 
         $movie = new Movie();
-        $form =  $this->createForm( MovieFormType::class, $movie);
+        $form =  $this->createForm(MovieFormType::class, $movie);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()){
+        if ($form->isSubmitted() && $form->isValid()) {
             $newMovie = $form->getData();
 
             $imagePath = $form->get('imagePath')->getData();
-            if ($imagePath){
-                $newFileName = uniqid() . '.' .$imagePath->guessExtension();
+            if ($imagePath) {
+                $newFileName = uniqid() . '.' . $imagePath->guessExtension();
 
-                try{
+                try {
                     $imagePath->move(
-                        $this->getParameter('kernel.project_dir'). '/public/uploads',
+                        $this->getParameter('kernel.project_dir') . '/public/uploads',
                         $newFileName
                     );
-                } catch(FileException $e){
-                    return new Response($e->getMessage()); 
+                } catch (FileException $e) {
+                    return new Response($e->getMessage());
                 }
 
                 $newMovie->setImagePath('/uploads/' . $newFileName);
@@ -67,7 +71,6 @@ class MoviesController extends AbstractController
             $this->em->flush();
 
             return $this->redirectToRoute('app_movies');
-
         }
 
         return $this->render('movies/create.html.twig', [
@@ -75,36 +78,36 @@ class MoviesController extends AbstractController
         ]);
     }
 
-    #[Route('/movies/edit/{id}', name:'app_movie_edit')]
-    public function edit($id, Request $request): Response{
+    #[Route('/movies/edit/{id}', name: 'app_movie_edit')]
+    public function edit($id, Request $request): Response
+    {
         $movie = $this->movieRepository->find($id);
         $form = $this->createForm(MovieFormType::class, $movie);
         $form->handleRequest($request);
         $imagePath = $form->get('imagePath')->getData();
 
-        if ($form->isSubmitted() && $form->isValid()){
+        if ($form->isSubmitted() && $form->isValid()) {
 
-            if ($imagePath){
+            if ($imagePath) {
 
-                if ($movie->getImagePath() !== null){
-                    if (file_exists($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath())){
-                        
+                if ($movie->getImagePath() !== null) {
+                    if (file_exists($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath())) {
+
                         unlink($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath());
                         $newFileName = uniqid() . '.' . $imagePath->guessExtension();
-                        try{
+                        try {
                             $imagePath->move(
-                                $this->getParameter('kernel.project_dir'). '/public/uploads',
+                                $this->getParameter('kernel.project_dir') . '/public/uploads',
                                 $newFileName
                             );
-                        } catch(FileException $e){
-                            return new Response($e->getMessage()); 
+                        } catch (FileException $e) {
+                            return new Response($e->getMessage());
                         }
                     }
                     $movie->setImagePath('/uploads/' . $newFileName);
                     $this->em->flush();
                     return $this->redirectToRoute('app_movies');
                 }
-
             } else {
                 $movie->setTitle($form->get('title')->getData());
                 $movie->setReleaseYear($form->get('releaseYear')->getData());
@@ -113,7 +116,6 @@ class MoviesController extends AbstractController
 
                 return $this->redirectToRoute('app_movies');
             }
-
         }
 
         return $this->render('movies/edit.html.twig', [
@@ -122,11 +124,12 @@ class MoviesController extends AbstractController
         ]);
     }
 
-    #[Route('/movies/delete/{id}', methods: ['GET', 'DELETE'],name: 'app_movie_delete')]
-    public function delete($id): Response{
+    #[Route('/movies/delete/{id}', methods: ['GET', 'DELETE'], name: 'app_movie_delete')]
+    public function delete($id): Response
+    {
         $movie = $this->movieRepository->find($id);
-        if ($movie->getImagePath()){
-            if (file_exists($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath())){
+        if ($movie->getImagePath()) {
+            if (file_exists($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath())) {
                 unlink($this->getParameter('kernel.project_dir') . '/public' . $movie->getImagePath());
             }
         }
@@ -137,10 +140,10 @@ class MoviesController extends AbstractController
         return $this->redirectToRoute('app_movies');
     }
 
-    #[Route('/movies/{id}', methods:["GET"], name: 'app_movie')]
+    #[Route('/movies/{id}', methods: ["GET"], name: 'app_movie')]
     public function showMovie($id): Response
     {
-            
+
         $movie = $this->movieRepository->find($id);
         // dd($movies);
 
@@ -149,6 +152,28 @@ class MoviesController extends AbstractController
         ]);
     }
 
+
+    #[Route('/api', name: 'app_api')]
+    #[OA\Response(
+        response: 200,
+        description: "Returns the list of books",
+        // content: [
+        //     'application/json' => [
+        //         'schema' => [
+        //             'type' => 'array',
+        //             'items' => new OA\Items(ref: @Model(type: Movie::class))
+        //         ]
+        //     ]
+        // ]
+    )]
+    #[OA\Tag(name: 'movies')]
+    public function api(): JsonResponse
+    {;
+        $movie = $this->movieRepository->findAll();
+        // dd($movies);
+
+        return $this->json($movie);
+    }
 }
 
 
